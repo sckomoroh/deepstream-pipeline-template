@@ -24,10 +24,16 @@ struct Config {
 }  // namespace infer
 
 class InferBinFactory : public BaseBinFactory<infer::Config> {
+private:
+    enum { INDEX_NVSTREAMMUX = 0, INDEX_NVINFER };
+
 protected:
     std::string binName() const override;
 
-    bool createChildren(const YAML::Node& node, const std::string& binName, GstBin* bin, std::vector<GstElement*>& elements) override;
+    bool createChildren(const YAML::Node& node,
+                        const std::string& binName,
+                        GstBin* bin,
+                        std::vector<GstElement*>& elements) override;
 
     bool connectChildren(const std::vector<GstElement*>& elements) override;
 

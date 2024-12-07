@@ -12,6 +12,7 @@ struct Config {
         int msg2p_newapi;
         int frame_interval;
         std::string config;
+        int multiple_payloads;
     } nvmsgconv;
 
     struct {
@@ -42,6 +43,11 @@ protected:
     bool createPads(GstBin* bin, const std::vector<GstElement*>& elements) override;
 
     std::optional<broker::Config> parseConfig(const YAML::Node& node, int index) override;
+
+private:
+    bool parseMsgConvConfig(const YAML::Node& node, broker::Config& config);
+
+    bool parseMsgBrokerConfig(const YAML::Node& node, broker::Config& config);
 };
 
 }  // namespace yz

@@ -11,7 +11,17 @@
 
 namespace yz {
 
-std::string SinkBinFactory::binName() const { return "yz-sink"; }
+namespace {
+
+constexpr const char* BIN_NAME = "yz-sink";
+
+constexpr const char* FACTORY_TEE = "tee";
+
+constexpr const char* PAD_SINK = "sink";
+
+}  // namespace
+
+std::string SinkBinFactory::binName() const { return BIN_NAME; }
 
 bool SinkBinFactory::createChildren(const YAML::Node& node,
                                     const std::string& binName,
@@ -22,8 +32,8 @@ bool SinkBinFactory::createChildren(const YAML::Node& node,
 
     using namespace common;
 
-    auto elementName = str::format("%s-%s", binName.c_str(), "tee");
-    auto teeElement = gst_element_factory_make("tee", elementName.c_str());
+    auto elementName = str::format("%s-%s", binName.c_str(), FACTORY_TEE);
+    auto teeElement = gst_element_factory_make(FACTORY_TEE, elementName.c_str());
     if (teeElement == nullptr) {
         return false;
     }
@@ -39,7 +49,7 @@ bool SinkBinFactory::createChildren(const YAML::Node& node,
 
         auto factoryIter = factories.find(binClass);
         if (factoryIter == factories.end()) {
-            // TODO: WARN
+            GST_WARNING("Factory for %s not found\n", name.c_str());
             continue;
         }
 
@@ -47,6 +57,7 @@ bool SinkBinFactory::createChildren(const YAML::Node& node,
 
         auto subBin = factoryIter->second->createBin(child.second, index.has_value() == true ? index.value() : -1);
         if (subBin == nullptr) {
+            GST_ERROR("Failed to create bin %s\n", name.c_str());
             return false;
         }
 
@@ -60,8 +71,11 @@ bool SinkBinFactory::createChildren(const YAML::Node& node,
 bool SinkBinFactory::connectChildren(const std::vector<GstElement*>& elements) {
     GstElement* queueElement = elements.at(0);
 
-    for (const auto& element : elements) {
-        gst_element_link(queueElement, element);
+    for (int i = INDEX_TEE + 1; i < elements.size(); i++) {
+        if (gst_element_link(queueElement, elements[i]) == false) {
+            GST_ERROR("Linkage failed\n");
+            return false;
+        }
     }
 
     return true;
@@ -74,7 +88,8 @@ bool SinkBinFactory::setupChildren(const sink::Config& config, const std::vector
 bool SinkBinFactory::createPads(GstBin* bin, const std::vector<GstElement*>& elements) {
     using namespace common;
 
-    if (createPad(bin, elements.at(0), "sink", "sink") == false) {
+    if (createPad(bin, elements.at(0), PAD_SINK, PAD_SINK) == false) {
+        GST_ERROR("Failed to create pad %s\n", PAD_SINK);
         return false;
     }
 
