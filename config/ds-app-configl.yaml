@@ -1,0 +1,33 @@
+pipeline-0:
+  yz-source-0:
+    filesrc-0:
+      location: /home/dev/Documents/sample_1080p_h264.mp4
+    
+  yz-infer-0:
+    nvstreammux-0:
+      batch-size: 1
+      batched-push-timeout: 40000
+      width: 1920
+      height: 1080
+
+    nvinfer-0:
+      gpu-id: 0
+      config-file-path: '../config/pgie-config.yml'
+
+  yz-sink-0:
+    yz-broker-0:
+      nvmsgconv:
+        payload-type: 0
+        msg2p-newapi: 1
+        frame-interval: 30
+        config: "../config/playload_schema.yaml"
+        multiple-payloads: 1
+
+      
+      nvmsgbroker:
+        proto-lib: /opt/nvidia/deepstream/deepstream/lib/libnvds_amqp_proto.so
+        conn-str: localhost;5672;admin;admin123
+        topic: test-queue
+        sync: 0
+
+    yz-render-0: ~
