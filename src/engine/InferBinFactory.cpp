@@ -9,26 +9,43 @@ namespace yz {
 
 namespace {
 
-constexpr const char* ELEMENT_NAME_STREAMMUX = "streammux";
-constexpr const char* ELEMENT_NAME_PRIMARY_GIE = "primary-gie";
+constexpr const char* BIN_NAME = "yz-infer";
+
+constexpr const char* FACTORY_NVSTREAMMUX = "nvstreammux";
+constexpr const char* FACTORY_NVINFER = "nvinfer";
+
+constexpr const char* PROPERTY_BATCH_SIZE = "batch-size";
+constexpr const char* PROPERTY_BATCHED_PUSH_TIMEOUT = "batched-push-timeout";
+constexpr const char* PROPERTY_WIDTH = "width";
+constexpr const char* PROPERTY_HEIGHT = "height";
+constexpr const char* PROPERTY_GPU_ID = "gpu-id";
+constexpr const char* PROPERTY_CONFIG_FILE_PATH = "config-file-path";
+
+constexpr const char* PAD_SRC = "src";
+constexpr const char* PAD_SINK = "sink";
 
 }  // namespace
 
-std::string InferBinFactory::binName() const { return "yz-infer"; }
+std::string InferBinFactory::binName() const { return BIN_NAME; }
 
-bool InferBinFactory::createChildren(const YAML::Node& node, const std::string& binName, GstBin* bin, std::vector<GstElement*>& elements) {
+bool InferBinFactory::createChildren(const YAML::Node& node,
+                                     const std::string& binName,
+                                     GstBin* bin,
+                                     std::vector<GstElement*>& elements) {
     using namespace common;
 
-    auto elementName = str::format("%s-%s", binName.c_str(), "nvstreammux");
-    auto nvstreammuxElement = gst_element_factory_make("nvstreammux", elementName.c_str());
+    auto elementName = str::format("%s-%s", binName.c_str(), FACTORY_NVSTREAMMUX);
+    auto nvstreammuxElement = gst_element_factory_make(FACTORY_NVSTREAMMUX, elementName.c_str());
     if (nvstreammuxElement == nullptr) {
+        GST_ERROR("Failed to create %s\n", FACTORY_NVSTREAMMUX);
         return false;
     }
     gst_bin_add(bin, nvstreammuxElement);
 
-    elementName = str::format("%s-%s", binName.c_str(), "nvinfer");
-    auto nvinferElement = gst_element_factory_make("nvinfer", elementName.c_str());
+    elementName = str::format("%s-%s", binName.c_str(), FACTORY_NVINFER);
+    auto nvinferElement = gst_element_factory_make(FACTORY_NVINFER, elementName.c_str());
     if (nvinferElement == nullptr) {
+        GST_ERROR("Failed to create %s\n", FACTORY_NVINFER);
         return false;
     }
     gst_bin_add(bin, nvinferElement);
@@ -39,32 +56,24 @@ bool InferBinFactory::createChildren(const YAML::Node& node, const std::string& 
 }
 
 bool InferBinFactory::connectChildren(const std::vector<GstElement*>& elements) {
-    if (gst_element_link_many(elements.at(0), elements.at(1), nullptr) == false) {
+    if (gst_element_link_many(elements.at(INDEX_NVSTREAMMUX), elements.at(INDEX_NVINFER), nullptr) == false) {
+        GST_ERROR("Linkage failed\n");
         return false;
     }
 
     return true;
 }
 
-void InferBinFactory::dumpProperties(GstElement* element) {
-    GObjectClass* objectClass = G_OBJECT_GET_CLASS(element);
-    guint propertiesCount;
-    auto properties = g_object_class_list_properties(objectClass, &propertiesCount);
-    while (*properties != nullptr) {
-        auto property = *properties;
-        printf("[DEBUG]     Property: '%s'\n", property->name);
-        properties++;
-    }
-}
-
 bool InferBinFactory::setupChildren(const infer::Config& config, const std::vector<GstElement*>& elements) {
-    g_object_set(G_OBJECT(elements.at(0)), "batch-size", config.streammux.batch_size, nullptr);
-    g_object_set(G_OBJECT(elements.at(0)), "batched-push-timeout", config.streammux.batched_push_timeout, nullptr);
-    g_object_set(G_OBJECT(elements.at(0)), "width", config.streammux.width, nullptr);
-    g_object_set(G_OBJECT(elements.at(0)), "height", config.streammux.height, nullptr);
+    g_object_set(G_OBJECT(elements.at(INDEX_NVSTREAMMUX)), PROPERTY_BATCH_SIZE, config.streammux.batch_size, nullptr);
+    g_object_set(G_OBJECT(elements.at(INDEX_NVSTREAMMUX)), PROPERTY_BATCHED_PUSH_TIMEOUT,
+                 config.streammux.batched_push_timeout, nullptr);
+    g_object_set(G_OBJECT(elements.at(INDEX_NVSTREAMMUX)), PROPERTY_WIDTH, config.streammux.width, nullptr);
+    g_object_set(G_OBJECT(elements.at(INDEX_NVSTREAMMUX)), PROPERTY_HEIGHT, config.streammux.height, nullptr);
 
-    g_object_set(G_OBJECT(elements.at(1)), "gpu-id", config.primary_gie.gpu_id, nullptr);
-    g_object_set(G_OBJECT(elements.at(1)), "config-file-path", config.primary_gie.config_file_path.c_str(), nullptr);
+    g_object_set(G_OBJECT(elements.at(INDEX_NVINFER)), PROPERTY_GPU_ID, config.primary_gie.gpu_id, nullptr);
+    g_object_set(G_OBJECT(elements.at(INDEX_NVINFER)), PROPERTY_CONFIG_FILE_PATH,
+                 config.primary_gie.config_file_path.c_str(), nullptr);
 
     return true;
 }
@@ -72,53 +81,13 @@ bool InferBinFactory::setupChildren(const infer::Config& config, const std::vect
 bool InferBinFactory::createPads(GstBin* bin, const std::vector<GstElement*>& elements) {
     using namespace common;
 
-    /*    GstPad* nvstreammuxSinkPad = gst_element_request_pad_simple(elements.at(0), "sink_0");
-        if (nvstreammuxSinkPad == nullptr) {
-            return false;
-        }
-
-        GstPad* binSinkPad = gst_ghost_pad_new("yz-infer-sink-pad", nvstreammuxSinkPad);
-        if (binSinkPad == nullptr) {
-            gst_object_unref(nvstreammuxSinkPad);
-            return false;
-        }
-
-        if (gst_element_add_pad(GST_ELEMENT(bin), binSinkPad) == false) {
-            gst_object_unref(binSinkPad);
-            gst_object_unref(nvstreammuxSinkPad);
-            return false;
-        }
-
-        gst_object_unref(nvstreammuxSinkPad);
-
-        // Src
-        GstPad* nvinferSrcPad = gst_element_get_static_pad(elements.at(1), "src");
-        if (nvinferSrcPad == nullptr) {
-            return false;
-        }
-
-        GstPad* binSrckPad = gst_ghost_pad_new("yz-infer-src-pad", nvinferSrcPad);
-        if (binSrckPad == nullptr) {
-            gst_object_unref(nvinferSrcPad);
-            return false;
-        }
-
-        if (gst_element_add_pad(GST_ELEMENT(bin), binSrckPad) == false) {
-            gst_object_unref(binSrckPad);
-            gst_object_unref(nvinferSrcPad);
-            return false;
-        }
-
-        gst_object_unref(nvinferSrcPad);
-
-        return true;*/
-    // auto padName = str::format("%s-%s", binName.c_str(), "sink-pad");
-    if (createPad(bin, elements.at(0), "sink_0", "sink", EPadType::Simple) == false) {
+    if (createPad(bin, elements.at(INDEX_NVSTREAMMUX), "sink_0", PAD_SINK, EPadType::Simple) == false) {
+        GST_ERROR("Failed to create pad %s\n", PAD_SINK);
         return false;
     }
 
-    // padName = str::format("%s-%s", binName.c_str(), "src-pad");
-    if (createPad(bin, elements.at(1), "src", "src") == false) {
+    if (createPad(bin, elements.at(INDEX_NVINFER), PAD_SRC, PAD_SRC) == false) {
+        GST_ERROR("Failed to create pad %s\n", PAD_SRC);
         return false;
     }
 
@@ -133,13 +102,13 @@ std::optional<infer::Config> InferBinFactory::parseConfig(const YAML::Node& node
         auto name = item.first.as<std::string>();
         auto binClass = str::removeSuffixIndex(name);
 
-        if (binClass == ELEMENT_NAME_STREAMMUX) {
+        if (binClass == FACTORY_NVSTREAMMUX) {
             if (parseStreammuxConfig(item.second, config) == false) {
                 return {};
             }
         }
 
-        if (binClass == ELEMENT_NAME_PRIMARY_GIE) {
+        if (binClass == FACTORY_NVINFER) {
             if (parsePrimaryGieConfig(item.second, config) == false) {
                 return {};
             }
@@ -152,10 +121,10 @@ std::optional<infer::Config> InferBinFactory::parseConfig(const YAML::Node& node
 bool InferBinFactory::parseStreammuxConfig(const YAML::Node& node, infer::Config& config) {
     using namespace common;
 
-    auto batch_size = yaml::getValue<int>("batch-size", node);
-    auto batched_push_timeout = yaml::getValue<int>("batched-push-timeout", node);
-    auto width = yaml::getValue<int>("width", node);
-    auto height = yaml::getValue<int>("height", node);
+    auto batch_size = yaml::getValue<int>(PROPERTY_BATCH_SIZE, node);
+    auto batched_push_timeout = yaml::getValue<int>(PROPERTY_BATCHED_PUSH_TIMEOUT, node);
+    auto width = yaml::getValue<int>(PROPERTY_WIDTH, node);
+    auto height = yaml::getValue<int>(PROPERTY_HEIGHT, node);
 
     if (batch_size.has_value() == false || batched_push_timeout.has_value() == false || width.has_value() == false ||
         height.has_value() == false) {
@@ -173,8 +142,8 @@ bool InferBinFactory::parseStreammuxConfig(const YAML::Node& node, infer::Config
 bool InferBinFactory::parsePrimaryGieConfig(const YAML::Node& node, infer::Config& config) {
     using namespace common;
 
-    auto gpu_id = yaml::getValue<int>("gpu-id", node);
-    auto config_file_path = yaml::getValue<std::string>("config-file-path", node);
+    auto gpu_id = yaml::getValue<int>(PROPERTY_GPU_ID, node);
+    auto config_file_path = yaml::getValue<std::string>(PROPERTY_CONFIG_FILE_PATH, node);
 
     if (gpu_id.has_value() == false || config_file_path.has_value() == false) {
         return false;

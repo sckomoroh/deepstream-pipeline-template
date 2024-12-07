@@ -30,7 +30,6 @@ GstPipeline* PiplineFactory::createPipeLine(const YAML::Node& rootNode) {
     return pipeline;
 }
 
-
 bool PiplineFactory::createSubBins(const YAML::Node& rootNode, GstPipeline* pipeline) {
     using namespace common;
 
@@ -43,8 +42,7 @@ bool PiplineFactory::createSubBins(const YAML::Node& rootNode, GstPipeline* pipe
 
         auto factoryIter = factories.find(binClass);
         if (factoryIter == factories.end()) {
-            GST_WARNING("PiplineFactory::createSubBins: Factory for %s not found", name.c_str());
-            printf("PiplineFactory::createSubBins: Factory for %s not found\n", name.c_str());
+            GST_WARNING("PiplineFactory::createSubBins: Factory for %s not found\n", name.c_str());
             continue;
         }
 
@@ -54,12 +52,14 @@ bool PiplineFactory::createSubBins(const YAML::Node& rootNode, GstPipeline* pipe
 
         auto bin = factoryIter->second->createBin(child.second, index.has_value() == true ? index.value() : -1);
         if (bin == nullptr) {
+            GST_ERROR("Failed to create bin %s\n", name.c_str());
             return false;
         }
 
         gst_bin_add(GST_BIN(pipeline), GST_ELEMENT(bin));
         if (previosBin != nullptr) {
             if (gst_element_link(GST_ELEMENT(previosBin), GST_ELEMENT(bin)) == false) {
+                GST_ERROR("Linkage failed\n");
                 return false;
             }
         }

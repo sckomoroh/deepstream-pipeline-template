@@ -18,9 +18,19 @@ struct Config {
 
 class SourceBinFactory : public BaseBinFactory<source::Config> {
 private:
-    std::string binName() const override;
+    enum {
+        INDEX_FILESRC = 0,
+        INDEX_QTDEMUX,
+        INDEX_H264PARSER,
+        INDEX_NVV512DECODER,
+    };
 
-    bool createChildren(const YAML::Node& node, const std::string& binName, GstBin* bin, std::vector<GstElement*>& elements) override;
+private:
+    std::string binName() const override;
+    bool createChildren(const YAML::Node& node,
+                        const std::string& binName,
+                        GstBin* bin,
+                        std::vector<GstElement*>& elements) override;
 
     bool connectChildren(const std::vector<GstElement*>& elements) override;
 
