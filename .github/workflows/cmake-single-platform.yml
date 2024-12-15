@@ -19,7 +19,7 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
     container:
-      image: nvcr.io/nvidia/deepstream:7.1-gc-triton-devel
+      image: deepstream:7.1-triton-multiarch
 
     steps:
     - uses: actions/checkout@v4
