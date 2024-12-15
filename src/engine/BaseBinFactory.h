@@ -2,8 +2,8 @@
 
 #include <optional>
 
-#include "IBinFactory.h"
 #include "common/string-tools.h"
+#include "IBinFactory.h"
 
 namespace yz {
 

@@ -1,6 +1,6 @@
 #include "InferBinFactory.h"
 
-#include "BaseBinFactory.h"
+#include "engine/BaseBinFactory.h"
 #include "common/string-tools.h"
 #include "common/tools.h"
 #include "common/yaml-tools.h"
@@ -13,6 +13,7 @@ constexpr const char* BIN_NAME = "yz-infer";
 
 constexpr const char* FACTORY_NVSTREAMMUX = "nvstreammux";
 constexpr const char* FACTORY_NVINFER = "nvinfer";
+constexpr const char* FACTORY_NVVIDEOCONVERT = "nvvideoconvert";
 
 constexpr const char* PROPERTY_BATCH_SIZE = "batch-size";
 constexpr const char* PROPERTY_BATCHED_PUSH_TIMEOUT = "batched-push-timeout";
@@ -50,13 +51,21 @@ bool InferBinFactory::createChildren(const YAML::Node& node,
     }
     gst_bin_add(bin, nvinferElement);
 
-    elements = {nvstreammuxElement, nvinferElement};
+    elementName = str::format("%s-%s", binName.c_str(), FACTORY_NVVIDEOCONVERT);
+    auto nvvideoconvertElement = gst_element_factory_make(FACTORY_NVVIDEOCONVERT, elementName.c_str());
+    if (nvvideoconvertElement == nullptr) {
+        return false;
+    }
+    gst_bin_add(bin, nvvideoconvertElement);
+
+    elements = {nvstreammuxElement, nvinferElement, nvvideoconvertElement};
 
     return true;
 }
 
 bool InferBinFactory::connectChildren(const std::vector<GstElement*>& elements) {
-    if (gst_element_link_many(elements.at(INDEX_NVSTREAMMUX), elements.at(INDEX_NVINFER), nullptr) == false) {
+    if (gst_element_link_many(elements.at(INDEX_NVSTREAMMUX), elements.at(INDEX_NVINFER),
+                              elements.at(INDEX_NV_VIDEO_CONVERT), nullptr) == false) {
         GST_ERROR("Linkage failed\n");
         return false;
     }
@@ -86,7 +95,7 @@ bool InferBinFactory::createPads(GstBin* bin, const std::vector<GstElement*>& el
         return false;
     }
 
-    if (createPad(bin, elements.at(INDEX_NVINFER), PAD_SRC, PAD_SRC) == false) {
+    if (createPad(bin, elements.at(INDEX_NV_VIDEO_CONVERT), PAD_SRC, PAD_SRC) == false) {
         GST_ERROR("Failed to create pad %s\n", PAD_SRC);
         return false;
     }

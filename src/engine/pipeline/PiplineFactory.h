@@ -12,10 +12,6 @@
 #include "common/yaml-tools.h"
 #include "engine/IBinFactory.h"
 
-#include "engine/InferBinFactory.h"
-#include "engine/SinkBinFactory.h"
-#include "engine/SourceBinFactory.h"
-
 namespace yz {
 
 class PiplineFactory {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseBinFactory.h"
+#include "engine/BaseBinFactory.h"
 #include "common/yaml-tools.h"
 
 namespace yz {
@@ -24,6 +24,9 @@ private:
         INDEX_H264PARSER,
         INDEX_NVV512DECODER,
     };
+
+public:
+    using BaseBinFactory::BaseBinFactory;
 
 private:
     std::string binName() const override;

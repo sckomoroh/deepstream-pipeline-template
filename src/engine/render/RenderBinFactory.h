@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseBinFactory.h"
+#include "engine/BaseBinFactory.h"
 
 namespace yz {
 
@@ -12,17 +12,18 @@ struct Config {};
 
 class RenderBinFactory : public BaseBinFactory<render::Config> {
 private:
-    enum {
-        INDEX_QUEUE = 0,
-        INDEX_NV_VIDEO_CONVERT,
-        INDEX_NV_DS_OSD,
-        INDEX_NV_EGL_GLES_SINK
-    };
+    enum { INDEX_QUEUE = 0, INDEX_NV_DS_OSD, INDEX_NV_EGL_GLES_SINK };
+
+public:
+    using BaseBinFactory::BaseBinFactory;
 
 protected:
     std::string binName() const override;
 
-    bool createChildren(const YAML::Node& node, const std::string& binName, GstBin* bin, std::vector<GstElement*>& elements) override;
+    bool createChildren(const YAML::Node& node,
+                        const std::string& binName,
+                        GstBin* bin,
+                        std::vector<GstElement*>& elements) override;
 
     bool connectChildren(const std::vector<GstElement*>& elements) override;
 

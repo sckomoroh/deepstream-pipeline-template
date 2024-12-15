@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseBinFactory.h"
+#include "engine/BaseBinFactory.h"
 #include "common/tools.h"
 #include "common/yaml-tools.h"
 namespace yz {
@@ -25,7 +25,14 @@ struct Config {
 
 class InferBinFactory : public BaseBinFactory<infer::Config> {
 private:
-    enum { INDEX_NVSTREAMMUX = 0, INDEX_NVINFER };
+    enum {
+        INDEX_NVSTREAMMUX = 0,
+        INDEX_NVINFER,
+        INDEX_NV_VIDEO_CONVERT,
+    };
+
+public:
+    using BaseBinFactory::BaseBinFactory;
 
 protected:
     std::string binName() const override;

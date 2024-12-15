@@ -5,8 +5,8 @@
 #include <nvds_obj_encode.h>
 #include <nvdsmeta_schema.h>
 
-#include "BaseBinFactory.h"
-#include "RegisteredFactories.h"
+#include "engine/BaseBinFactory.h"
+#include "engine/RegisteredFactories.h"
 #include "common/yaml-tools.h"
 
 namespace yz {
@@ -38,6 +38,24 @@ bool SinkBinFactory::createChildren(const YAML::Node& node,
         return false;
     }
     gst_bin_add(bin, teeElement);
+
+    elementName = str::format("%s-fakesink-queue", binName.c_str());
+    auto queueElement = gst_element_factory_make(FACTORY_TEE, elementName.c_str());
+    if (queueElement == nullptr) {
+        return false;
+    }
+    gst_bin_add(bin, queueElement);
+
+    elementName = str::format("%s-fakesink-fakesink", binName.c_str());
+    auto fakesinkElement = gst_element_factory_make(FACTORY_TEE, elementName.c_str());
+    if (fakesinkElement == nullptr) {
+        return false;
+    }
+    gst_bin_add(bin, fakesinkElement);
+
+    if (gst_element_link_many(teeElement, queueElement, fakesinkElement, nullptr) == false) {
+        GST_WARNING("Failed to link fake sink\n");
+    }
 
     elements.push_back(teeElement);
 

@@ -4,11 +4,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "InferBinFactory.h"
-#include "SourceBinFactory.h"
-#include "SinkBinFactory.h"
-#include "RenderBinFactory.h"
-#include "BrokerBinFactory.h"
+#include "broker/BrokerBinFactory.h"
+#include "infer/InferBinFactory.h"
+#include "render/RenderBinFactory.h"
+#include "sink/SinkBinFactory.h"
+#include "source/SourceBinFactory.h"
 
 namespace yz {
 

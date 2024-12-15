@@ -1,0 +1,15 @@
+source:
+  location: /home/dev/Documents/sources/DeepStreamApp/video/hitch_005.mp4
+
+streammux:
+  batch-size: 1
+  batched-push-timeout: 40000
+  width: 1920
+  height: 1080
+
+primary-gie:
+  enable: 1
+  gpu-id: 0
+  gie-unique-id: 1
+  nvbuf-memory-type: 0
+  config-file-path: '/home/dev/Documents/sources/DeepStreamApp/config/pgie-config copy.yml'
