@@ -1,0 +1,26 @@
+source:
+  # location: /dev/video1
+  # location: ../video/sample.h264
+  # location: /home/dev/Downloads/output.h264
+  location: /home/dev/Downloads/final_demo_clip.mp4
+
+file-src-0:
+  # location: /home/dev/Downloads/final_demo_clip.mp4
+  location: /home/dev/Downloads/final_demo_clip.mp4
+
+streammux:
+  batch-size: 1
+  batched-push-timeout: 40000
+  width: 1920
+  height: 1080
+
+primary-gie:
+  enable: 1
+  gpu-id: 0
+  gie-unique-id: 1
+  nvbuf-memory-type: 0
+  config-file-path: '../config/pgie-config.yml'
+
+app-config:
+  posprocess-callback: false
+  visualization: true

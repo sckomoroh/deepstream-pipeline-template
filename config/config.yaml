@@ -1,0 +1,30 @@
+
+bins:
+  - yz-source:
+      filesrc:
+        location: /opt/nvidia/deepstream/deepstream/samples/streams/sample_720p.mp4
+
+  - yz-infer:
+      streammux:
+        batch-size: 1
+        batched-push-timeout: 40000
+        width: 1920
+        height: 1080
+
+      primary-gie:
+        enable: 1
+        gpu-id: 0
+        gie-unique-id: 1
+        nvbuf-memory-type: 0
+        config-file-path: '../config/pgie-config.yml'
+
+  - yz-sink:
+     
+      # nvmsgconv:
+      #   payload-type: 0
+      #   msg2p-newapi: 1
+      #   frame-interval: 30
+      #   config: "../config/playload_schema.yaml"
+
+      # multifilesink:
+      #   location: "frame_%d.yaml"

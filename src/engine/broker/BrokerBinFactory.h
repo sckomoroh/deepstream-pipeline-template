@@ -1,6 +1,6 @@
 #pragma
 
-#include "BaseBinFactory.h"
+#include "engine/BaseBinFactory.h"
 
 namespace yz {
 
@@ -13,6 +13,7 @@ struct Config {
         int frame_interval;
         std::string config;
         int multiple_payloads;
+        std::string msg2p_lib;
     } nvmsgconv;
 
     struct {
@@ -26,7 +27,11 @@ struct Config {
 }  // namespace broker
 
 class BrokerBinFactory : public BaseBinFactory<broker::Config> {
+private:
     enum { INDEX_QUEUE = 0, INDEX_MSG_CONV, INDEX_MSG_BROKER };
+
+public:
+    using BaseBinFactory::BaseBinFactory;
 
 protected:
     std::string binName() const override;

@@ -9,7 +9,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "RegisteredFactories.h"
+#include "engine/RegisteredFactories.h"
 #include "common/string-tools.h"
 #include "common/yaml-tools.h"
 

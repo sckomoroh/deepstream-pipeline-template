@@ -5,8 +5,7 @@
 #include <nvds_obj_encode.h>
 #include <nvdsmeta_schema.h>
 
-#include "BaseBinFactory.h"
-
+#include "engine/BaseBinFactory.h"
 #include "common/yaml-tools.h"
 
 namespace yz {
@@ -22,6 +21,9 @@ private:
     enum {
         INDEX_TEE = 0,
     };
+
+public:
+    using BaseBinFactory::BaseBinFactory;
 
 protected:
     std::string binName() const override;

@@ -12,16 +12,17 @@ pipeline-0:
 
     nvinfer-0:
       gpu-id: 0
-      config-file-path: '../config/pgie-config.yml'
+      config-file-path: 'config/pgie-config.yml'
 
   yz-sink-0:
     yz-broker-0:
       nvmsgconv:
-        payload-type: 0
+        payload-type: 1
         msg2p-newapi: 1
         frame-interval: 30
         config: "../config/playload_schema.yaml"
-        multiple-payloads: 1
+        multiple-payloads: 0
+        msg2p-lib: /home/dev/Documents/sources/DS_testApp/build/src/msgconv-generator/libmsg-generator.so
 
       
       nvmsgbroker:

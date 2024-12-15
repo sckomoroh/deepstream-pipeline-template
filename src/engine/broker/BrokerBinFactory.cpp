@@ -23,6 +23,7 @@ constexpr const char* PROPERTY_CONN_STR = "conn-str";
 constexpr const char* PROPERTY_PROTO_LIB = "proto-lib";
 constexpr const char* PROPERTY_SYNC = "sync";
 constexpr const char* PROPERTY_TOPIC = "topic";
+constexpr const char* PROPERTY_MSG2P_LIB = "msg2p-lib";
 
 }  // namespace
 
@@ -82,6 +83,13 @@ bool BrokerBinFactory::setupChildren(const broker::Config& config, const std::ve
     g_object_set(G_OBJECT(elements.at(INDEX_MSG_CONV)), PROPERTY_CONFIG, config.nvmsgconv.config.c_str(), nullptr);
     g_object_set(G_OBJECT(elements.at(INDEX_MSG_CONV)), PROPERTY_MULTIPLE_PAYLOADS, config.nvmsgconv.multiple_payloads,
                  nullptr);
+    if (config.nvmsgconv.msg2p_lib.empty() == false) {
+        g_object_set(G_OBJECT(elements.at(INDEX_MSG_CONV)), PROPERTY_MSG2P_LIB, config.nvmsgconv.msg2p_lib.c_str(),
+                     nullptr);
+    }
+    // g_object_set(G_OBJECT(elements.at(INDEX_MSG_CONV)), "debug-payload-dir",
+    // "/home/dev/Documents/sources/DS_testApp/debug-payload",
+    //              nullptr);
 
     g_object_set(G_OBJECT(elements.at(INDEX_MSG_BROKER)), PROPERTY_CONN_STR, config.nvmsgbroker.conn_str.c_str(),
                  nullptr);
@@ -152,16 +160,22 @@ bool BrokerBinFactory::parseMsgConvConfig(const YAML::Node& node, broker::Config
         return false;
     }
 
+    auto msg2p_lib = yaml::getValue<std::string>(PROPERTY_MSG2P_LIB, node);
+    if (msg2p_lib.has_value() == false) {
+        GST_WARNING("Property %s not found\n", PROPERTY_MSG2P_LIB);
+    }
+
     auto multiple_payloads = yaml::getValue<int>(PROPERTY_MULTIPLE_PAYLOADS, node);
     if (multiple_payloads.has_value() == false) {
-        GST_ERROR("Property %s not found\n", PROPERTY_MULTIPLE_PAYLOADS);
-        return false;
+        GST_WARNING("Property %s not found\n", PROPERTY_MULTIPLE_PAYLOADS);
     }
 
     config.nvmsgconv.payload_type = payload_type.value();
     config.nvmsgconv.msg2p_newapi = msg2p_newapi.value();
     config.nvmsgconv.frame_interval = frame_interval.value();
     config.nvmsgconv.config = config_file.value();
+    config.nvmsgconv.msg2p_lib = msg2p_lib.value_or("");
+    config.nvmsgconv.multiple_payloads = multiple_payloads.value();
 
     return true;
 }

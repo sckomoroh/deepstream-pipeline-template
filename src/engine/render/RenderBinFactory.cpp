@@ -7,7 +7,6 @@ namespace {
 constexpr const char* BIN_NAME = "yz-render";
 
 constexpr const char* FACTORY_QUEUE = "queue";
-constexpr const char* FACTORY_NVVIDEOCONVERT = "nvvideoconvert";
 constexpr const char* FACTORY_NVDSOSD = "nvdsosd";
 constexpr const char* FACTORY_NVEGLGLESSINK = "nveglglessink";
 
@@ -31,13 +30,6 @@ bool RenderBinFactory::createChildren(const YAML::Node& node,
     }
     gst_bin_add(bin, queueElement);
 
-    elementName = str::format("%s-%s", binName.c_str(), FACTORY_NVVIDEOCONVERT);
-    auto nvvideoconvertElement = gst_element_factory_make(FACTORY_NVVIDEOCONVERT, elementName.c_str());
-    if (nvvideoconvertElement == nullptr) {
-        return false;
-    }
-    gst_bin_add(bin, nvvideoconvertElement);
-
     elementName = str::format("%s-%s", binName.c_str(), FACTORY_NVDSOSD);
     auto nvdsosd = gst_element_factory_make(FACTORY_NVDSOSD, elementName.c_str());
     if (nvdsosd == nullptr) {
@@ -52,13 +44,13 @@ bool RenderBinFactory::createChildren(const YAML::Node& node,
     }
     gst_bin_add(bin, nveglglessinkElement);
 
-    elements = {queueElement, nvvideoconvertElement, nvdsosd, nveglglessinkElement};
+    elements = {queueElement, nvdsosd, nveglglessinkElement};
 
     return true;
 }
 
 bool RenderBinFactory::connectChildren(const std::vector<GstElement*>& elements) {
-    if (gst_element_link_many(elements.at(INDEX_QUEUE), elements.at(INDEX_NV_VIDEO_CONVERT),
+    if (gst_element_link_many(elements.at(INDEX_QUEUE),
                               elements.at(INDEX_NV_DS_OSD), elements.at(INDEX_NV_EGL_GLES_SINK), nullptr) == false) {
         return false;
     }
